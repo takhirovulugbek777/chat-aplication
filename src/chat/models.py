@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class Chat(TimeStampedModel):
     chat_id = models.CharField(max_length=255, unique=True)
     participants = models.ManyToManyField('auth.User')
-    last_message = models.ForeignKey('chat.Message', on_delete=models.CASCADE)
+    last_message = models.ForeignKey('chat.Message', on_delete=models.CASCADE, null=True, blank=True)
 
     @classmethod
     def get_or_create(cls, sender: User, receiver: User):
@@ -19,7 +19,10 @@ class Chat(TimeStampedModel):
         else:
             _chat_id = f'chat_{receiver.id}_{sender.id}'
 
-        chat, _ = cls.objects.get_or_create(chat_id=_chat_id)
+        chat, created = cls.objects.get_or_create(chat_id=_chat_id)
+        if created:
+            chat.participants.add(receiver)
+            chat.participants.add(sender)
         return chat
 
 
