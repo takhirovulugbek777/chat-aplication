@@ -23,6 +23,8 @@ class Chat(TimeStampedModel):
         if created:
             chat.participants.add(receiver)
             chat.participants.add(sender)
+            ChatUser.objects.create(chat=chat, user=receiver)
+            ChatUser.objects.create(chat=chat, user=sender)
         return chat
 
 

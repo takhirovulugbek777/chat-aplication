@@ -26,9 +26,11 @@ class CreateMessageSerializer(serializers.ModelSerializer):
             if validated_data['sender'] == validated_data['receiver']:
                 raise serializers.ValidationError('Can not send to yourself')
             chat = Chat.get_or_create(validated_data['sender'], validated_data['receiver'])
-            chat_user, _ = ChatUser.objects.get_or_create(chat=chat, user=validated_data['receiver'])
             message = Message.objects.create(sender=validated_data['sender'], chat=chat, text=validated_data['text'])
-            ChatUser.objects.filter(id=chat_user.id).update(unread_count=F('unread_count') + 1)
+            ChatUser.objects.filter(
+                chat=chat,
+                user=validated_data['receiver']
+            ).update(unread_count=F('unread_count') + 1)
             chat.last_message = message
             chat.save()
             return message
