@@ -17,7 +17,7 @@ class SendMessageView(GenericAPIView):
         return Response({'message_id': message.id}, status=status.HTTP_201_CREATED)
 
 
-class ChatHistoryView(ListAPIView):
+class ChatListAPIView(ListAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = ChatSerializer
     queryset = Chat.objects.all()
