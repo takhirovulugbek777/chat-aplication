@@ -10,10 +10,10 @@ if TYPE_CHECKING:
 class Chat(TimeStampedModel):
     chat_id = models.CharField(max_length=255, unique=True)
     participants = models.ManyToManyField('auth.User')
-    last_message = models.ForeignKey('chat.Message', on_delete=models.CASCADE, null=True, blank=True)
+    last_message = models.ForeignKey('chat.Message', on_delete=models.CASCADE, related_name="+", null=True, blank=True)
 
     @classmethod
-    def get_or_create(cls, sender: User, receiver: User):
+    def get_or_create(cls, sender: "User", receiver: "User"):
         if sender.id > receiver.id:
             _chat_id = f'chat_{sender.id}_{receiver.id}'
         else:
@@ -35,7 +35,7 @@ class Message(TimeStampedModel):
 
 
 class ChatUser(TimeStampedModel):
-    chat = models.ForeignKey('chat.Chat', on_delete=models.CASCADE)
+    chat = models.ForeignKey('chat.Chat', on_delete=models.CASCADE, related_name='users')
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
     unread_message_count = models.PositiveIntegerField(default=0)
     last_read_at = models.DateTimeField(null=True, blank=True)

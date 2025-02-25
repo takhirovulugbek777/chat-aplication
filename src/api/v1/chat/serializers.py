@@ -30,7 +30,7 @@ class CreateMessageSerializer(serializers.ModelSerializer):
             ChatUser.objects.filter(
                 chat=chat,
                 user=validated_data['receiver']
-            ).update(unread_count=F('unread_count') + 1)
+            ).update(unread_message_count=F('unread_message_count') + 1)
             chat.last_message = message
             chat.save()
             return message
@@ -49,13 +49,15 @@ class ChatSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     unread_message_count = serializers.SerializerMethodField()
     last_message = MessageSerializer()
+    name = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
         fields = (
             'id',
             'last_message',
-            'unread_message_count'
+            'unread_message_count',
+            'name'
         )
 
     def get_id(self, instance):
@@ -63,3 +65,6 @@ class ChatSerializer(serializers.ModelSerializer):
 
     def get_unread_message_count(self, instance: Chat):
         return ChatUser.objects.filter(chat=instance, user=self.context['request'].user).first().unread_message_count
+
+    def get_name(self, instance: Chat):
+        return ChatUser.objects.filter(chat=instance).exclude(user=self.context['request'].user).first().user.first_name
