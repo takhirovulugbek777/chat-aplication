@@ -30,7 +30,8 @@ class Chat(TimeStampedModel):
 
 class Message(TimeStampedModel):
     sender = models.ForeignKey('auth.User', on_delete=models.CASCADE)
-    chat = models.ForeignKey('chat.Chat', on_delete=models.CASCADE)
+    chat = models.ForeignKey('chat.Chat', on_delete=models.CASCADE, related_name="messages")
+    is_read = models.BooleanField(default=False)
     text = models.TextField()
 
 

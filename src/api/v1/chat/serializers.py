@@ -37,11 +37,17 @@ class CreateMessageSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source='sender.first_name', read_only=True)
+    sent_at = serializers.DateTimeField(source='created', format="%Y-%m-%d %H:%M:%S", read_only=True)
+    username = serializers.CharField(source='sender.username', read_only=True)
     class Meta:
         model = Message
         fields = (
             'id',
-            'text'
+            'text',
+            'sender_name',
+            'sent_at',
+            'username',
         )
 
 
@@ -50,6 +56,7 @@ class ChatSerializer(serializers.ModelSerializer):
     unread_message_count = serializers.SerializerMethodField()
     last_message = MessageSerializer()
     name = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
@@ -57,7 +64,8 @@ class ChatSerializer(serializers.ModelSerializer):
             'id',
             'last_message',
             'unread_message_count',
-            'name'
+            'name',
+            'username',
         )
 
     def get_id(self, instance):
@@ -68,3 +76,6 @@ class ChatSerializer(serializers.ModelSerializer):
 
     def get_name(self, instance: Chat):
         return ChatUser.objects.filter(chat=instance).exclude(user=self.context['request'].user).first().user.first_name
+
+    def get_username(self, instance: Chat):
+        return ChatUser.objects.filter(chat=instance).exclude(user=self.context['request'].user).first().user.username
