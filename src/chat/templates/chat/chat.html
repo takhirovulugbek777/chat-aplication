@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+    <div class="chat-container">
+        <div class="row h-100">
+            <div class="col-md-4">
+                <div class="chat-sidebar h-100">
+                    <div class="chat-header">
+                        <div class="avatar" id="user-avatar"></div>
+                        <div>
+                            <h5 class="mb-0" id="user-name"></h5>
+                            <small class="text-muted">Online</small>
+                        </div>
+                    </div>
+                    <div id="chat-list"></div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="chat-content h-100">
+                    <div class="chat-header">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar" id="chat-user-avatar"></div>
+                            <div>
+                                <h5 class="mb-0" id="chat-title">Select a chat</h5>
+                                <small class="text-muted" id="chat-status"></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="messages-container" id="chat-messages"></div>
+                    <div class="message-input">
+                        <form id="message-form">
+                            <div class="input-group">
+                                <input type="text" id="message-input" class="form-control"
+                                       placeholder="Type your message..." required>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        $(document).ready(function () {
+            let currentChatId = null;
+            let currentUser = null;
+
+            function getCurrentUser() {
+                $.get('/api/v1/user/user/1/', function (data) {
+                    currentUser = data;
+                    $('#user-name').text(data.full_name);
+                    $('#user-avatar').text(getInitials(data.full_name));
+                });
+            }
+
+            function getInitials(name) {
+                return name.split(' ').map(word => word[0]).join('').toUpperCase();
+            }
+
+            function formatTime(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diff = now - date;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+                if (days === 0) {
+                    return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+                } else if (days < 7) {
+                    return date.toLocaleDateString([], {weekday: 'short'});
+                } else {
+                    return date.toLocaleDateString([], {day: '2-digit', month: '2-digit', year: '2-digit'});
+                }
+            }
+
+            function fetchChats() {
+                $.get('/api/v1/chats/', function (data) {
+                    $('#chat-list').empty();
+                    data.forEach(function (chat) {
+                        const lastMessage = chat.last_message ?
+                            `<p class="mb-0 text-truncate text-muted">${chat.last_message.text}</p>
+                         <small class="text-muted">${formatTime(chat.last_message.sent_at)}</small>` : '';
+
+                        $('#chat-list').append(`
+                        <div class="chat-list-item" data-chat-id="${chat.id}" data-name="${chat.name}">
+                            <div class="avatar me-3">${getInitials(chat.name)}</div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">${chat.name}</h6>
+                                    ${chat.unread_message_count > 0 ?
+                            `<span class="unread-badge">${chat.unread_message_count}</span>` : ''}
+                                </div>
+                                ${lastMessage}
+                            </div>
+                        </div>
+                    `);
+                    });
+                });
+            }
+
+            function loadChat(chatId, chatName) {
+                currentChatId = chatId;
+                $('#chat-title').text(chatName);
+                $('#chat-user-avatar').text(getInitials(chatName));
+                $('#chat-status').text('Online');
+
+                $.get(`/api/v1/chats/${chatId}/messages/`, function (response) {
+                    $('#chat-messages').empty();
+                    response.data.forEach(function (message) {
+                        const isCurrentUser = message.username!==currentUser.username;
+                        $('#chat-messages').append(`
+                        <div class="message-wrapper ${isCurrentUser ? 'text-end' : 'text-start'}">
+                            <div class="message ${isCurrentUser ? 'sent' : 'received'}">
+                                <div class="message-content">
+                                    <p class="mb-1">${message.text}</p>
+                                    <small class="message-time">${formatTime(message.sent_at)}</small>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    });
+                    $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+                });
+            }
+
+            $('#chat-list').on('click', '.chat-list-item', function () {
+                const chatId = $(this).data('chat-id');
+                const chatName = $(this).data('name');
+                loadChat(chatId, chatName);
+            });
+
+            $('#message-form').submit(function (e) {
+                e.preventDefault();
+                if (!currentChatId) return;
+
+                const message = $('#message-input').val().trim();
+                if (!message) return;
+
+                $.ajax({
+                    url: '/api/v1/chats/send-message/',
+                    method: 'POST',
+                    data: JSON.stringify({
+                        receiver: currentChatId,
+                        text: message
+                    }),
+                    contentType: 'application/json',
+                    success: function (data) {
+                        $('#message-input').val('');
+                        loadChat(currentChatId, $('#chat-title').text());
+                        fetchChats(); // Refresh chat list to update last message
+                    }
+                });
+            });
+
+            // Initial load
+            getCurrentUser();
+            fetchChats();
+
+            // Refresh chat list every 30 seconds
+            setInterval(fetchChats, 30000);
+        });
+    </script>
+{% endblock %}
