@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import RetrieveAPIView, ListAPIView
 from .serializers import UserProfileSerializer
@@ -10,3 +11,5 @@ class UserDetailAPIView(RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
     lookup_field = "id"
+
+
