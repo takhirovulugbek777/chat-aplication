@@ -1,17 +1,13 @@
 from django.contrib.auth import get_user_model
-from django.db.migrations import serializer
 from rest_framework import status
 from django.db import transaction
-from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView, ListAPIView, get_object_or_404, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
 from chat.models import Chat, Message, ChatUser
-from user_app.models import Profile
 from .serializers import CreateMessageSerializer, ChatSerializer, MessageSerializer
-from api.v1.user_app.serializers import UserProfileSerializer, ProfileSerializer
+from api.v1.user_app.serializers import ProfileSerializer
 
 User = get_user_model()
 

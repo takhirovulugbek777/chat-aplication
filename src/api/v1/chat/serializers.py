@@ -40,9 +40,12 @@ class MessageSerializer(serializers.ModelSerializer):
     sender_name = serializers.CharField(source='sender.first_name', read_only=True)
     sent_at = serializers.DateTimeField(source='created', format="%Y-%m-%d %H:%M:%S", read_only=True)
     username = serializers.CharField(source='sender.username', read_only=True)
+    user_id = serializers.CharField(source='sender.id', read_only=True)
+
     class Meta:
         model = Message
         fields = (
+            'user_id',
             'id',
             'text',
             'sender_name',
